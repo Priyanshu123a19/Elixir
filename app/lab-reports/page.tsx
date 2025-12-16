@@ -24,6 +24,7 @@ import { GmailConnector } from "@/components/gmail-connector";
 import { LabReportUpload } from "@/components/lab-report-upload";
 import { LabGeminiPanel } from "@/components/lab-gemini-panel";
 import { LabReportChat } from "@/components/lab-report-chat";
+import { LabReportTrends } from "@/components/lab-report-trends";
 
 interface LabReport {
   id: string;
@@ -48,6 +49,8 @@ export default function LabReportsPage() {
   const [labReports, setLabReports] = useState<LabReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<LabReport | null>(null);
+  const [trendsReport, setTrendsReport] = useState<LabReport | null>(null);
+  const [trendsOpen, setTrendsOpen] = useState(false);
 
   const fetchLabReports = async () => {
     if (!supabase) {
@@ -355,6 +358,17 @@ export default function LabReportsPage() {
                             </Badge>
                           )}
                           <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setTrendsReport(report);
+                              setTrendsOpen(true);
+                            }}
+                          >
+                            <TrendingUp className="h-4 w-4 mr-1" />
+                            View Trends
+                          </Button>
+                          <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setSelectedReport(report)}
@@ -485,6 +499,16 @@ export default function LabReportsPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Trends Modal */}
+      {trendsReport && (
+        <LabReportTrends
+          report={trendsReport}
+          allReports={labReports}
+          open={trendsOpen}
+          onOpenChange={setTrendsOpen}
+        />
+      )}
     </div>
   );
 }
