@@ -26,6 +26,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  isLoading?: boolean;
   sources?: Array<{
     chunkIndex: number;
     preview: string;
@@ -72,10 +73,20 @@ export function LabReportChat({ reportId, fileName }: LabReportChatProps) {
       timestamp: new Date(),
     };
 
+    const questionText = input.trim();
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
     setError(null);
+
+    // Add loading message with animated dots
+    const loadingMessage: Message = {
+      role: "assistant",
+      content: "",
+      timestamp: new Date(),
+      isLoading: true,
+    };
+    setMessages((prev) => [...prev, loadingMessage]);
 
     try {
       const {
@@ -101,6 +112,7 @@ export function LabReportChat({ reportId, fileName }: LabReportChatProps) {
       // Build conversation history for context
       const conversationHistory = messages
         .filter((msg) => msg.role === "user" || msg.role === "assistant")
+        .filter((msg) => !msg.isLoading)
         .map((msg) => ({
           role: msg.role,
           content: msg.content,
@@ -111,13 +123,16 @@ export function LabReportChat({ reportId, fileName }: LabReportChatProps) {
         headers,
         body: JSON.stringify({
           reportId,
-          question: userMessage.content,
+          question: questionText,
           userId: user.id,
           conversationHistory,
         }),
       });
 
       const data = await response.json();
+
+      // Remove loading message
+      setMessages((prev) => prev.filter(msg => !msg.isLoading));
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || "Failed to get answer");
@@ -133,8 +148,8 @@ export function LabReportChat({ reportId, fileName }: LabReportChatProps) {
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err: any) {
       setError(err.message || "Failed to send message");
-      // Remove the user message if it failed
-      setMessages((prev) => prev.slice(0, -1));
+      // Remove loading message and user message if it failed
+      setMessages((prev) => prev.filter(msg => !msg.isLoading).slice(0, -1));
     } finally {
       setLoading(false);
     }
@@ -160,21 +175,7 @@ export function LabReportChat({ reportId, fileName }: LabReportChatProps) {
         </div>
       </CardHeader>
       <CardContent className="flex flex-col flex-1 min-h-0 p-4">
-        <ScrollArea
-          ref={scrollAreaRef}
-          className="flex-1 pr-4 mb-4"
-          style={{ maxHeight: "500px" }}
-        >
-          <div className="space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex gap-3 ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                {message.role === "assistant" && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+        <ScrollArea{`flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ${message.isLoading ? 'animate-pulse' : ''}`}>
                     <Bot className="h-4 w-4 text-white" />
                   </div>
                 )}
@@ -183,6 +184,31 @@ export function LabReportChat({ reportId, fileName }: LabReportChatProps) {
                     message.role === "user" ? "items-end" : "items-start"
                   }`}
                 >
+                  <div
+                    className={`rounded-2xl px-4 py-3 ${
+                      message.role === "user"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md"
+                        : "bg-gray-100 text-gray-900 shadow-sm"
+                    }`}
+                  >
+                    {message.isLoading ? (
+                      <div className="flex items-center gap-2 py-1">
+                        <span className="text-xs text-gray-600 font-medium">Analyzing report</span>
+                        <div className="flex gap-1">
+                          <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                          <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                          <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                        {message.content
+                          .replace(/\*\*/g, "")
+                          .replace(/\*/g, "")
+                          .replace(/#{1,6}\s+/g, "")
+                          .replace(/`/g, "")}
+                      </p>
+                    )}
                   <div
                     className={`rounded-2xl px-4 py-3 ${
                       message.role === "user"
@@ -236,26 +262,6 @@ export function LabReportChat({ reportId, fileName }: LabReportChatProps) {
                 )}
               </div>
             ))}
-            {loading && (
-              <div className="flex gap-3 justify-start">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-white" />
-                </div>
-                <div className="bg-gray-100 rounded-2xl px-4 py-3">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
-                    />
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </ScrollArea>
 
@@ -295,12 +301,12 @@ export function LabReportChat({ reportId, fileName }: LabReportChatProps) {
             onKeyPress={handleKeyPress}
             placeholder="Ask about your lab results..."
             disabled={loading}
-            className="flex-1 pr-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+            className="flex-1 pr-10 border-2 focus:border-blue-400 transition-colors"
           />
           <Button
             onClick={handleSend}
             disabled={loading || !input.trim()}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md transition-all"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />

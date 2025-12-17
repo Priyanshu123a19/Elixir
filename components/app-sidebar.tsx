@@ -9,6 +9,8 @@ import {
   StickyNote,
   LayoutDashboard,
   LogIn,
+  Stethoscope,
+  Pill,
 } from "lucide-react";
 
 import {
@@ -34,6 +36,16 @@ const menuItems = [
     title: "Lab Reports",
     icon: FileText,
     href: "/lab-reports",
+  },
+  {
+    title: "Medicine Recommendations",
+    icon: Pill,
+    href: "/medicine-recommendations",
+  },
+  {
+    title: "Symptom Checker",
+    icon: Stethoscope,
+    href: "/symptom-checker",
   },
   {
     title: "AI Chatbot",

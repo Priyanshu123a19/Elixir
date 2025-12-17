@@ -18,13 +18,21 @@ import {
   AlertCircle,
   Trash2,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { GmailConnector } from "@/components/gmail-connector";
 import { LabReportUpload } from "@/components/lab-report-upload";
 import { LabGeminiPanel } from "@/components/lab-gemini-panel";
-import { LabReportChat } from "@/components/lab-report-chat";
-import { LabReportTrends } from "@/components/lab-report-trends";
+import { HealthGoalsView } from "@/components/health-goals-view";
+import { LinkFollowupReport } from "@/components/link-followup-report";
 
 interface LabReport {
   id: string;
@@ -42,6 +50,11 @@ interface LabReport {
     }>;
   };
   ai_analysis?: string;
+  recommendations?: {
+    diet: string[];
+    exercise: string[];
+    lifestyle: string[];
+  };
   uploaded_at: string;
 }
 
@@ -49,8 +62,8 @@ export default function LabReportsPage() {
   const [labReports, setLabReports] = useState<LabReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<LabReport | null>(null);
-  const [trendsReport, setTrendsReport] = useState<LabReport | null>(null);
-  const [trendsOpen, setTrendsOpen] = useState(false);
+  const [selectedOverviewReport, setSelectedOverviewReport] = useState<LabReport | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const fetchLabReports = async () => {
     if (!supabase) {
@@ -110,6 +123,21 @@ export default function LabReportsPage() {
     fetchLabReports();
   }, []);
 
+  // Auto-select the first report when Health Goals tab is opened if none selected
+  useEffect(() => {
+    if (activeTab === "goals" && !selectedReport && labReports.length > 0) {
+      console.log("Auto-selecting first report for Health Goals");
+      setSelectedReport(labReports[0]);
+    }
+  }, [activeTab, selectedReport, labReports]);
+
+  // Auto-select the first report for overview when reports are loaded
+  useEffect(() => {
+    if (labReports.length > 0 && !selectedOverviewReport) {
+      setSelectedOverviewReport(labReports[0]);
+    }
+  }, [labReports, selectedOverviewReport]);
+
   const handleDelete = async (reportId: string) => {
     if (!supabase) return;
 
@@ -162,90 +190,100 @@ export default function LabReportsPage() {
   }).length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">
-            Lab Report Analysis
-          </h2>
-          <p className="text-muted-foreground">
-            Upload and analyze your lab test results with AI-powered insights
-          </p>
+    <div className="mobile-card-spacing">
+      <div className="flex flex-col gap-4 sm:gap-3">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Lab Report Analysis
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              Upload and analyze your lab test results with AI-powered insights
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <GmailConnector />
-          <LabReportUpload onUploadSuccess={fetchLabReports} />
+        
+        {/* Action Buttons - Full width on mobile, side by side with better spacing */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2 w-full sm:w-auto">
+          <div className="flex-1 sm:flex-initial">
+            <GmailConnector />
+          </div>
+          <div className="flex-1 sm:flex-initial">
+            <LabReportUpload onUploadSuccess={fetchLabReports} />
+          </div>
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="reports">Recent Reports</TabsTrigger>
-          <TabsTrigger value="analysis">Detailed Analysis</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3 sm:space-y-4 mt-4 sm:mt-6">
+        <TabsList className="grid w-full grid-cols-4 h-auto p-1">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm px-1.5 py-2 sm:px-3 sm:py-2.5">Overview</TabsTrigger>
+          <TabsTrigger value="reports" className="text-xs sm:text-sm px-1.5 py-2 sm:px-3 sm:py-2.5">Reports</TabsTrigger>
+          <TabsTrigger value="analysis" className="text-xs sm:text-sm px-1.5 py-2 sm:px-3 sm:py-2.5">Analysis</TabsTrigger>
+          <TabsTrigger value="goals" className="text-xs sm:text-sm px-1.5 py-2 sm:px-3 sm:py-2.5">Goals</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <TabsContent value="overview" className="space-y-3 sm:space-y-4">
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 py-3 sm:py-4">
+                <CardTitle className="text-xs sm:text-sm font-medium">
                   Total Reports
                 </CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
+                <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalReports}</div>
+              <CardContent className="px-3 sm:px-6">
+                <div className="text-xl sm:text-2xl font-bold">{totalReports}</div>
                 <p className="text-xs text-muted-foreground">
                   {labReports.length > 0
-                    ? `Last uploaded ${new Date(
+                    ? `Last ${new Date(
                         labReports[0]?.uploaded_at
                       ).toLocaleDateString()}`
-                    : "No reports yet"}
+                    : "No reports"}
                 </p>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 py-3 sm:py-4">
+                <CardTitle className="text-xs sm:text-sm font-medium">
                   Normal Results
                 </CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{normalReports}</div>
+              <CardContent className="px-3 sm:px-6">
+                <div className="text-xl sm:text-2xl font-bold">{normalReports}</div>
                 <p className="text-xs text-muted-foreground">
                   {totalReports > 0
                     ? `${Math.round(
                         (normalReports / totalReports) * 100
-                      )}% of all reports`
+                      )}%`
                     : "No data"}
                 </p>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 py-3 sm:py-4">
+                <CardTitle className="text-xs sm:text-sm font-medium">
                   Abnormal Results
                 </CardTitle>
-                <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{abnormalReports}</div>
+              <CardContent className="px-3 sm:px-6">
+                <div className="text-xl sm:text-2xl font-bold">{abnormalReports}</div>
                 <p className="text-xs text-muted-foreground">
-                  Requires attention
+                  Needs attention
                 </p>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 py-3 sm:py-4">
+                <CardTitle className="text-xs sm:text-sm font-medium">
                   Critical Alerts
                 </CardTitle>
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{criticalReports}</div>
+              <CardContent className="px-3 sm:px-6">
+                <div className="text-xl sm:text-2xl font-bold">{criticalReports}</div>
                 <p className="text-xs text-muted-foreground">Action needed</p>
               </CardContent>
             </Card>
@@ -257,29 +295,77 @@ export default function LabReportsPage() {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </CardContent>
             </Card>
-          ) : labReports.length > 0 && labReports[0]?.ai_analysis ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Latest Report Analysis</CardTitle>
-                <CardDescription>
-                  AI-powered analysis of your most recent lab results
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-lg border p-4 bg-muted/50 whitespace-pre-wrap text-sm">
-                  {labReports[0].ai_analysis
-                    ?.replace(/\*\*/g, "")
-                    .replace(/\*/g, "")
-                    .replace(/#{1,6}\s+/g, "")
-                    .replace(/`/g, "")}
-                </div>
-              </CardContent>
-            </Card>
+          ) : labReports.length > 0 ? (
+            <>
+              {/* Report Selector */}
+              <Card className="border-2 border-primary/20 shadow-md bg-primary/5">
+                <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
+                  <CardTitle className="text-base sm:text-lg">Select Report</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
+                    Choose a report to view its analysis
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-3 sm:px-6">
+                  <Select
+                    value={selectedOverviewReport?.id || ""}
+                    onValueChange={(value) => {
+                      const report = labReports.find((r) => r.id === value);
+                      if (report) {
+                        setSelectedOverviewReport(report);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a report" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {labReports.map((report) => (
+                        <SelectItem key={report.id} value={report.id}>
+                          {report.structured_data?.testType || report.file_name} - {" "}
+                          {report.structured_data?.date ||
+                            new Date(report.uploaded_at).toLocaleDateString()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
+              {/* Report Analysis */}
+              {selectedOverviewReport?.ai_analysis ? (
+                <Card>
+                  <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
+                    <CardTitle className="text-base sm:text-lg">Report Analysis</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                      AI-powered analysis of {selectedOverviewReport.structured_data?.testType || selectedOverviewReport.file_name}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-3 sm:px-6">
+                    <div className="rounded-lg border p-3 sm:p-4 bg-muted/50 whitespace-pre-wrap text-xs sm:text-sm">
+                      {selectedOverviewReport.ai_analysis
+                        ?.replace(/\*\*/g, "")
+                        .replace(/\*/g, "")
+                        .replace(/#{1,6}\s+/g, "")
+                        .replace(/`/g, "")}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
+                    <CardTitle className="text-base sm:text-lg">No Analysis Available</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                      This report doesn't have an AI analysis yet
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              )}
+            </>
           ) : (
             <Card>
-              <CardHeader>
-                <CardTitle>No Reports Yet</CardTitle>
-                <CardDescription>
+              <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
+                <CardTitle className="text-base sm:text-lg">No Reports Yet</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
                   Upload your first lab report to get AI-powered analysis
                 </CardDescription>
               </CardHeader>
@@ -358,22 +444,24 @@ export default function LabReportsPage() {
                             </Badge>
                           )}
                           <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setTrendsReport(report);
-                              setTrendsOpen(true);
-                            }}
-                          >
-                            <TrendingUp className="h-4 w-4 mr-1" />
-                            View Trends
-                          </Button>
-                          <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setSelectedReport(report)}
+                            onClick={() => {
+                              setSelectedReport(report);
+                              setActiveTab("analysis");
+                            }}
                           >
-                            View
+                            View Analysis
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedReport(report);
+                              setActiveTab("goals");
+                            }}
+                          >
+                            Health Goals
                           </Button>
                           <Button
                             variant="ghost"
@@ -480,11 +568,89 @@ export default function LabReportsPage() {
                 </CardContent>
               </Card>
 
-              {/* Chat Interface */}
-              <LabReportChat
-                reportId={selectedReport.id}
-                fileName={selectedReport.file_name}
-              />
+              {/* Personalized Recommendations */}
+              {selectedReport.recommendations && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      Personalized Recommendations
+                    </CardTitle>
+                    <CardDescription>
+                      Evidence-based suggestions tailored to your lab results
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Diet Recommendations */}
+                    {selectedReport.recommendations.diet && selectedReport.recommendations.diet.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <span className="text-lg">🥗</span>
+                          </div>
+                          <h4 className="font-semibold text-lg">Diet</h4>
+                        </div>
+                        <div className="space-y-2 pl-10">
+                          {selectedReport.recommendations.diet.map((rec, idx) => (
+                            <div key={idx} className="flex gap-2 text-sm">
+                              <span className="text-primary mt-1">•</span>
+                              <p className="flex-1 text-muted-foreground">{rec}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Exercise Recommendations */}
+                    {selectedReport.recommendations.exercise && selectedReport.recommendations.exercise.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <span className="text-lg">💪</span>
+                          </div>
+                          <h4 className="font-semibold text-lg">Exercise</h4>
+                        </div>
+                        <div className="space-y-2 pl-10">
+                          {selectedReport.recommendations.exercise.map((rec, idx) => (
+                            <div key={idx} className="flex gap-2 text-sm">
+                              <span className="text-primary mt-1">•</span>
+                              <p className="flex-1 text-muted-foreground">{rec}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Lifestyle Recommendations */}
+                    {selectedReport.recommendations.lifestyle && selectedReport.recommendations.lifestyle.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <span className="text-lg">🌱</span>
+                          </div>
+                          <h4 className="font-semibold text-lg">Lifestyle</h4>
+                        </div>
+                        <div className="space-y-2 pl-10">
+                          {selectedReport.recommendations.lifestyle.map((rec, idx) => (
+                            <div key={idx} className="flex gap-2 text-sm">
+                              <span className="text-primary mt-1">•</span>
+                              <p className="flex-1 text-muted-foreground">{rec}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Disclaimer */}
+                    <div className="mt-6 pt-4 border-t">
+                      <p className="text-xs text-muted-foreground italic">
+                        ⚠️ These recommendations are AI-generated suggestions based on your lab results. 
+                        Always consult with your healthcare provider before making significant changes to your diet, exercise routine, or lifestyle.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </>
           ) : (
             <Card>
@@ -498,17 +664,66 @@ export default function LabReportsPage() {
             </Card>
           )}
         </TabsContent>
-      </Tabs>
 
-      {/* Trends Modal */}
-      {trendsReport && (
-        <LabReportTrends
-          report={trendsReport}
-          allReports={labReports}
-          open={trendsOpen}
-          onOpenChange={setTrendsOpen}
-        />
-      )}
+        <TabsContent value="goals" className="space-y-4">
+          {selectedReport ? (
+            <>
+              <HealthGoalsView 
+                reportId={selectedReport.id}
+                onLinkFollowup={() => {
+                  // Trigger follow-up linking
+                  const linkButton = document.getElementById(`link-followup-${selectedReport.id}`);
+                  linkButton?.click();
+                }}
+              />
+              <div className="hidden">
+                <LinkFollowupReport
+                  baselineReportId={selectedReport.id}
+                  onProgressAnalyzed={() => {
+                    // Refresh goals view
+                    fetchLabReports();
+                  }}
+                  triggerButton={
+                    <button id={`link-followup-${selectedReport.id}`} />
+                  }
+                />
+              </div>
+            </>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Health Goals</CardTitle>
+                <CardDescription>
+                  Select a report from the "Recent Reports" tab to view health goals
+                  and progress tracking
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center py-8">
+                <div className="space-y-4">
+                  <p className="text-muted-foreground">
+                    You have {labReports.length} report(s) uploaded
+                  </p>
+                  <Button
+                    variant="default"
+                    onClick={() => {
+                      setSelectedReport(labReports[0]);
+                      console.log("Selected latest report:", labReports[0].id);
+                    }}
+                  >
+                    View Latest Report Goals
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveTab("reports")}
+                  >
+                    Browse All Reports
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

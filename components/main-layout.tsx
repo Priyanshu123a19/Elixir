@@ -13,15 +13,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white px-4 md:px-6">
+        <header className="flex h-14 md:h-16 shrink-0 items-center gap-2 border-b bg-white px-3 md:px-6">
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Separator orientation="vertical" className="mr-1 md:mr-2 h-4" />
           <Link href="/" className="flex items-center">
-            <img src="/logo.png" alt="Elixir Health" className="h-12 w-auto object-contain" />
+            <img src="/logo.png" alt="Elixir Health" className="h-8 sm:h-10 md:h-12 w-auto object-contain" />
           </Link>
           
-          {/* Navigation Bar */}
-          <nav className="flex items-center gap-1 ml-6">
+          {/* Navigation Bar - Hidden on mobile */}
+          <nav className="hidden md:flex items-center gap-1 ml-6">
             <Link
               href="/"
               className="px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600"
@@ -40,7 +40,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <UserMenu />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 overflow-auto bg-gray-50">
+        <div className="flex flex-1 flex-col gap-4 md:gap-6 p-3 sm:p-4 md:p-6 overflow-auto bg-gray-50">
           {children}
         </div>
       </SidebarInset>

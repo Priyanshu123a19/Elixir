@@ -6,7 +6,7 @@ export async function sendEmail({
   to,
   subject,
   html,
-  from = process.env.EMAIL_FROM_ADDRESS || 'noreply@yourdomain.com'
+  from = process.env.EMAIL_FROM_ADDRESS || 'onboarding@resend.dev'
 }: {
   to: string;
   subject: string;

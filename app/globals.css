@@ -120,3 +120,47 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile-friendly utilities */
+@layer utilities {
+  /* Touch-friendly tap targets */
+  .tap-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Prevent text zoom on iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  
+  /* Mobile-optimized scrollbars */
+  @media (max-width: 768px) {
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 2px;
+    }
+  }
+  
+  /* Safe area for mobile devices with notches */
+  .safe-padding {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Mobile card spacing */
+  .mobile-card-spacing {
+    @apply space-y-3 sm:space-y-4 md:space-y-6;
+  }
+}
