@@ -414,16 +414,16 @@ export default function LabReportsPage() {
                     return (
                       <div
                         key={report.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-3"
                       >
-                        <div className="flex items-center gap-4">
-                          <FileText className="h-5 w-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">
+                        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                          <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm sm:text-base truncate">
                               {report.structured_data?.testType ||
                                 report.file_name}
                             </p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               {report.structured_data?.date ||
                                 new Date(
                                   report.uploaded_at
@@ -431,7 +431,62 @@ export default function LabReportsPage() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        
+                        {/* Mobile Layout */}
+                        <div className="flex sm:hidden flex-col gap-2">
+                          {/* Badges Row */}
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={hasAbnormal ? "secondary" : "default"}
+                              className="text-xs"
+                            >
+                              {hasAbnormal ? "Abnormal" : "Normal"}
+                            </Badge>
+                            {hasCritical && (
+                              <Badge variant="outline" className="text-xs">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Critical
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          {/* Action Buttons Row */}
+                          <div className="grid grid-cols-3 gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-8 px-2"
+                              onClick={() => {
+                                setSelectedReport(report);
+                                setActiveTab("analysis");
+                              }}
+                            >
+                              Analysis
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="text-xs h-8 px-2"
+                              onClick={() => {
+                                setSelectedReport(report);
+                                setActiveTab("goals");
+                              }}
+                            >
+                              Goals
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-8 px-2"
+                              onClick={() => handleDelete(report.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Desktop Layout */}
+                        <div className="hidden sm:flex items-center gap-2">
                           <Badge
                             variant={hasAbnormal ? "secondary" : "default"}
                           >

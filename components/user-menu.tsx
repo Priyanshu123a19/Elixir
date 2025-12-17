@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { User, LogOut, Settings } from "lucide-react";
+import { getUserAvatarUrl } from "@/lib/avatar-generator";
 
 export function UserMenu() {
   const router = useRouter();
@@ -81,12 +82,15 @@ export function UserMenu() {
     .toUpperCase()
     .slice(0, 2);
 
+  // Get avatar - either custom uploaded or generated fun emoji avatar
+  const avatarUrl = getUserAvatarUrl(user.id, user.user_metadata?.avatar_url);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.user_metadata?.avatar_url} alt={userEmail} />
+            <AvatarImage src={avatarUrl} alt={userEmail} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
         </Button>

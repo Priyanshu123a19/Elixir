@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@dicebear/collection": "^9.2.4",
+    "@dicebear/core": "^9.2.4",
     "@google/generative-ai": "^0.24.1",
     "@huggingface/inference": "^4.13.5",
     "@langchain/community": "^0.3.19",

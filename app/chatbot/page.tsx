@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Send, Bot, User, Sparkles } from "lucide-react"
+import { supabase } from "@/lib/supabase-client"
+import { getUserAvatarUrl } from "@/lib/avatar-generator"
 
 interface Message {
   id: string
@@ -17,16 +19,35 @@ interface Message {
 }
 
 export default function ChatbotPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content: "Hello! I'm your AI health assistant. I can answer general medical questions, explain health concepts, and provide information about symptoms, conditions, and treatments. How can I help you today?",
-      timestamp: new Date(),
-    },
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    // Initialize with welcome message on client side only
+    setMessages([
+      {
+        id: "1",
+        role: "assistant",
+        content: "Hello! I'm your AI health assistant. I can answer general medical questions, explain health concepts, and provide information about symptoms, conditions, and treatments. How can I help you today?",
+        timestamp: new Date(),
+      },
+    ])
+    setMounted(true)
+
+    // Get user avatar
+    const fetchUserAvatar = async () => {
+      if (!supabase) return
+      const { data } = await supabase.auth.getUser()
+      if (data.user) {
+        const avatarUrl = getUserAvatarUrl(data.user.id, data.user.user_metadata?.avatar_url)
+        setUserAvatarUrl(avatarUrl)
+      }
+    }
+    fetchUserAvatar()
+  }, [])
 
   const handleSend = async () => {
     if (!input.trim() || isTyping) return
@@ -107,6 +128,25 @@ export default function ChatbotPage() {
     }
   }
 
+  // Prevent hydration mismatch by waiting for client-side mount
+  if (!mounted) {
+    return (
+      <div className="mobile-card-spacing h-full flex flex-col">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">AI Health Chatbot</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Get instant answers to your medical questions with AI-powered assistance
+          </p>
+        </div>
+        <Card className="flex-1 flex items-center justify-center">
+          <CardContent>
+            <p className="text-muted-foreground">Loading...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="mobile-card-spacing h-full flex flex-col">
       <div>
@@ -176,6 +216,7 @@ export default function ChatbotPage() {
                   </div>
                   {message.role === "user" && (
                     <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
+                      {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt="User" />}
                       <AvatarFallback className="bg-secondary">
                         <User className="h-3 w-3 sm:h-4 sm:w-4" />
                       </AvatarFallback>
